@@ -9,6 +9,7 @@ const STORAGE_KEY = 'leetcode_usernames';
 export default function Dashboard() {
     const [usernames, setUsernames] = useState<string[]>([]);
     const [students, setStudents] = useState<LeetCodeStats[]>([]);
+    const [collegeByUsername, setCollegeByUsername] = useState<Record<string, string>>({});
     const [loading, setLoading] = useState(false);
     const [countdown, setCountdown] = useState(REFRESH_INTERVAL);
     const [newUsername, setNewUsername] = useState('');
@@ -23,7 +24,25 @@ export default function Dashboard() {
                 if (response.ok) {
                     const data = await response.json();
                     if (Array.isArray(data.usernames)) {
-                        setUsernames(data.usernames);
+                        // Handle both string[] and { username, college }[]
+                        if (data.usernames.length > 0 && typeof data.usernames[0] === 'object') {
+                            const entries = data.usernames as { username: string; college?: string }[];
+                            const names = entries.map((e) => e.username);
+                            const collegeMap: Record<string, string> = {};
+                            entries.forEach((e) => {
+                                if (e.username) {
+                                    collegeMap[e.username] = e.college ?? '';
+                                }
+                            });
+                            setUsernames(names);
+                            setCollegeByUsername(collegeMap);
+                            localStorage.setItem(STORAGE_KEY, JSON.stringify(names));
+                            return;
+                        }
+
+                        // Fallback: simple list of usernames
+                        setUsernames(data.usernames as string[]);
+                        setCollegeByUsername({});
                         localStorage.setItem(STORAGE_KEY, JSON.stringify(data.usernames));
                         return;
                     }
@@ -98,6 +117,12 @@ export default function Dashboard() {
         localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
         setNewUsername('');
 
+        // New usernames won't have a college by default
+        setCollegeByUsername(prev => ({
+            ...prev,
+            [trimmed]: prev[trimmed] ?? '',
+        }));
+
         try {
             await fetch('/api/usernames', {
                 method: 'POST',
@@ -114,6 +139,11 @@ export default function Dashboard() {
             const updated = usernames.filter(u => u !== username);
             setUsernames(updated);
             localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
+
+            setCollegeByUsername(prev => {
+                const { [username]: _removed, ...rest } = prev;
+                return rest;
+            });
 
             try {
                 await fetch('/api/usernames', {
@@ -260,6 +290,9 @@ export default function Dashboard() {
                                 <th className="px-5 py-4 text-left text-xs font-semibold text-slate-500 uppercase cursor-pointer hover:text-blue-500" onClick={() => handleSort('username')}>
                                     Student <SortIcon column="username" />
                                 </th>
+                                <th className="px-5 py-4 text-left text-xs font-semibold text-slate-500 uppercase">
+                                    College
+                                </th>
                                 <th className="px-5 py-4 text-center text-xs font-semibold text-slate-500 uppercase cursor-pointer hover:text-emerald-500" onClick={() => handleSort('easySolved')}>
                                     Easy <SortIcon column="easySolved" />
                                 </th>
@@ -324,6 +357,11 @@ export default function Dashboard() {
                                                     {student.username}
                                                 </a>
                                             </div>
+                                        </td>
+                                        <td className="px-5 py-4">
+                                            <span className="text-sm text-slate-600">
+                                                {collegeByUsername[student.username] || '—'}
+                                            </span>
                                         </td>
                                         <td className="px-5 py-4 text-center">
                                             <span className="px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-50 text-emerald-600">{student.easySolved}</span>
