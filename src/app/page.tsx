@@ -14,7 +14,8 @@ export default function Dashboard() {
     const [countdown, setCountdown] = useState(REFRESH_INTERVAL);
     const [newUsername, setNewUsername] = useState('');
     const [searchQuery, setSearchQuery] = useState('');
-    const [sortKey, setSortKey] = useState<keyof LeetCodeStats>('totalSolved');
+    const [selectedCollege, setSelectedCollege] = useState('');
+    const [sortKey, setSortKey] = useState<keyof LeetCodeStats | 'college'>('totalSolved');
     const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
 
     useEffect(() => {
@@ -31,7 +32,8 @@ export default function Dashboard() {
                             const collegeMap: Record<string, string> = {};
                             entries.forEach((e) => {
                                 if (e.username) {
-                                    collegeMap[e.username] = e.college ?? '';
+                                    // Normalize to lowercase for case-insensitive lookup
+                                    collegeMap[e.username.toLowerCase()] = e.college ?? '';
                                 }
                             });
                             setUsernames(names);
@@ -108,6 +110,12 @@ export default function Dashboard() {
         e.preventDefault();
         const trimmed = newUsername.trim();
         if (!trimmed) return;
+
+        if (trimmed.includes(' ')) {
+            alert('Username cannot contain spaces.');
+            return;
+        }
+
         if (usernames.includes(trimmed)) {
             alert('Username already exists!');
             return;
@@ -120,7 +128,7 @@ export default function Dashboard() {
         // New usernames won't have a college by default
         setCollegeByUsername(prev => ({
             ...prev,
-            [trimmed]: prev[trimmed] ?? '',
+            [trimmed.toLowerCase()]: prev[trimmed.toLowerCase()] ?? '',
         }));
 
         try {
@@ -157,7 +165,7 @@ export default function Dashboard() {
         }
     };
 
-    const handleSort = (key: keyof LeetCodeStats) => {
+    const handleSort = (key: keyof LeetCodeStats | 'college') => {
         if (sortKey === key) {
             setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
         } else {
@@ -166,6 +174,11 @@ export default function Dashboard() {
         }
     };
 
+    const uniqueColleges = useMemo(() => {
+        const colleges = new Set(Object.values(collegeByUsername).filter(Boolean));
+        return Array.from(colleges).sort();
+    }, [collegeByUsername]);
+
     const filteredStudents = useMemo(() => {
         let result = [...students];
         if (searchQuery) {
@@ -173,28 +186,44 @@ export default function Dashboard() {
                 s.username.toLowerCase().includes(searchQuery.toLowerCase())
             );
         }
+        if (selectedCollege) {
+            result = result.filter(s =>
+                collegeByUsername[s.username.toLowerCase()] === selectedCollege
+            );
+        }
         result.sort((a, b) => {
-            let aVal = a[sortKey];
-            let bVal = b[sortKey];
+            let aVal: string | number | undefined;
+            let bVal: string | number | undefined;
+
+            if (sortKey === 'college') {
+                aVal = collegeByUsername[a.username.toLowerCase()] || '';
+                bVal = collegeByUsername[b.username.toLowerCase()] || '';
+            } else {
+                aVal = a[sortKey];
+                bVal = b[sortKey];
+            }
+
             if (aVal === undefined) return 1;
             if (bVal === undefined) return -1;
+
             if (typeof aVal === 'string') {
                 aVal = aVal.toLowerCase();
                 bVal = (bVal as string).toLowerCase();
             }
+
             if (aVal < bVal) return sortOrder === 'asc' ? -1 : 1;
             if (aVal > bVal) return sortOrder === 'asc' ? 1 : -1;
             return 0;
         });
         return result;
-    }, [students, searchQuery, sortKey, sortOrder]);
+    }, [students, searchQuery, selectedCollege, sortKey, sortOrder, collegeByUsername]);
 
     const totalEasy = students.reduce((sum, s) => sum + s.easySolved, 0);
     const totalMedium = students.reduce((sum, s) => sum + s.mediumSolved, 0);
     const totalHard = students.reduce((sum, s) => sum + s.hardSolved, 0);
     const totalSolved = students.reduce((sum, s) => sum + s.totalSolved, 0);
 
-    const SortIcon = ({ column }: { column: keyof LeetCodeStats }) => {
+    const SortIcon = ({ column }: { column: keyof LeetCodeStats | 'college' }) => {
         if (sortKey !== column) return <span className="text-slate-300 ml-1 text-[10px]">↕</span>;
         return <span className="text-blue-500 ml-1 text-[10px] font-bold">{sortOrder === 'asc' ? '↑' : '↓'}</span>;
     };
@@ -261,6 +290,27 @@ export default function Dashboard() {
                             onChange={(e) => setSearchQuery(e.target.value)}
                         />
                     </div>
+
+                    <div className="relative min-w-[200px]">
+                        <select
+                            className="input-clean w-full appearance-none cursor-pointer"
+                            value={selectedCollege}
+                            onChange={(e) => setSelectedCollege(e.target.value)}
+                        >
+                            <option value="">All Colleges</option>
+                            {uniqueColleges.map((college) => (
+                                <option key={college} value={college}>
+                                    {college}
+                                </option>
+                            ))}
+                        </select>
+                        <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                                <path fillRule="evenodd" d="M1.646 4.646a.5.5 0 0 1 .708 0L8 10.293l5.646-5.647a.5.5 0 0 1 .708.708l-6 6a.5.5 0 0 1-.708 0l-6-6a.5.5 0 0 1 0-.708z" />
+                            </svg>
+                        </div>
+                    </div>
+
                     <form onSubmit={handleAddUsername} className="flex-1 flex gap-3">
                         <input
                             type="text"
@@ -290,8 +340,8 @@ export default function Dashboard() {
                                 <th className="px-5 py-4 text-left text-xs font-semibold text-slate-500 uppercase cursor-pointer hover:text-blue-500" onClick={() => handleSort('username')}>
                                     Student <SortIcon column="username" />
                                 </th>
-                                <th className="px-5 py-4 text-left text-xs font-semibold text-slate-500 uppercase">
-                                    College
+                                <th className="px-5 py-4 text-left text-xs font-semibold text-slate-500 uppercase cursor-pointer hover:text-blue-500" onClick={() => handleSort('college')}>
+                                    College <SortIcon column="college" />
                                 </th>
                                 <th className="px-5 py-4 text-center text-xs font-semibold text-slate-500 uppercase cursor-pointer hover:text-emerald-500" onClick={() => handleSort('easySolved')}>
                                     Easy <SortIcon column="easySolved" />
@@ -302,6 +352,7 @@ export default function Dashboard() {
                                 <th className="px-5 py-4 text-center text-xs font-semibold text-slate-500 uppercase cursor-pointer hover:text-red-500" onClick={() => handleSort('hardSolved')}>
                                     Hard <SortIcon column="hardSolved" />
                                 </th>
+
                                 <th className="px-5 py-4 text-center text-xs font-semibold text-slate-500 uppercase cursor-pointer hover:text-blue-500" onClick={() => handleSort('totalSolved')}>
                                     Total <SortIcon column="totalSolved" />
                                 </th>
@@ -360,7 +411,7 @@ export default function Dashboard() {
                                         </td>
                                         <td className="px-5 py-4">
                                             <span className="text-sm text-slate-600">
-                                                {collegeByUsername[student.username] || '—'}
+                                                {collegeByUsername[student.username.toLowerCase()] || '—'}
                                             </span>
                                         </td>
                                         <td className="px-5 py-4 text-center">
