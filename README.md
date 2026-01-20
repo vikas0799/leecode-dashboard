@@ -1,36 +1,179 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# LeetCode Dashboard 📊
 
-## Getting Started
+A real-time web dashboard to track and analyze LeetCode problem-solving progress of students across colleges. Built for coding clubs, mentors, and institutions to monitor performance, compare rankings, and export insights effortlessly.
 
-First, run the development server:
+---
+
+## 🚀 Features
+
+### 👨‍🎓 Student Tracking
+
+* Live LeetCode statistics using public GraphQL API
+* Difficulty-wise problem breakdown (Easy / Medium / Hard)
+* Total solved problems count
+* Global LeetCode ranking
+
+### 🏫 Organization & Filtering
+
+* Group students by college
+* Search students by username
+* Filter by college using dropdown
+* Sort by:
+
+  * Username
+  * College
+  * Easy / Medium / Hard problems
+  * Total solved
+  * Global ranking
+
+### 🗂 Data Management
+
+* Add or remove LeetCode usernames from UI
+* Persistent storage using local JSON file
+* Export filtered or full data to Excel (.xlsx)
+
+### 🎨 User Interface
+
+* Fully responsive design (mobile + desktop)
+* Built with Tailwind CSS
+* Auto-refresh data every 30 seconds
+
+---
+
+## 🛠 Tech Stack
+
+| Layer      | Technology              |
+| ---------- | ----------------------- |
+| Framework  | Next.js 15 (App Router) |
+| UI Library | React 19                |
+| Language   | TypeScript              |
+| Styling    | Tailwind CSS 4          |
+| API        | LeetCode GraphQL        |
+| Export     | xlsx                    |
+
+---
+
+## 📁 Project Structure
+
+```
+leetcode-dashboard/
+├── data/
+│   └── usernames.json       # Student usernames & colleges
+├── src/
+│   ├── app/
+│   │   ├── api/
+│   │   │   ├── leetcode/    # Fetch LeetCode stats
+│   │   │   └── usernames/   # Read/write usernames JSON
+│   │   └── page.tsx         # Main dashboard UI
+│   └── lib/
+│       └── leetcode.ts      # GraphQL queries & helpers
+```
+
+---
+
+## 🔄 Data Flow
+
+1. Dashboard loads usernames from `/api/usernames`
+2. Usernames are sent to `/api/leetcode`
+3. Backend fetches data from LeetCode GraphQL API
+4. Results stored in React state
+5. Filtering & sorting handled client-side for instant UI updates
+
+---
+
+## 📄 Data Format (`data/usernames.json`)
+
+### ✅ Recommended (Grouped by College)
+
+```json
+{
+  "HITECH": [
+    { "college": "HITECH", "username": "user1" }
+  ],
+  "RGIB": [
+    { "college": "RGIB", "username": "user2" }
+  ]
+}
+```
+
+### 🕰 Legacy Format
+
+```json
+["user1", "user2"]
+```
+
+> Note: Users added from UI may not have college mapping by default.
+
+---
+
+## ⚙️ Setup & Installation
+
+### Prerequisites
+
+* Node.js v18+
+* npm or yarn
+
+### Install Dependencies
+
+```bash
+npm install
+```
+
+### Run Locally
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open: `http://localhost:3000`
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+---
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## 🏗 Production Build
 
-## Learn More
+```bash
+npm run build
+npm start
+```
 
-To learn more about Next.js, take a look at the following resources:
+---
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## 📤 Exporting Data
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+* Click **Download Excel** to export:
 
-## Deploy on Vercel
+  * All students, or
+  * Currently filtered students
+* File generated in `.xlsx` format
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+---
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## 🔮 Future Enhancements
+
+* Authentication & role-based access
+* Admin panel
+* Cloud database (Supabase / Firebase)
+* Analytics & charts
+* Daily / weekly progress tracking
+* Leaderboards & notifications
+
+---
+
+## 🎯 Use Cases
+
+* College coding clubs
+* Placement preparation batches
+* Mentorship programs
+* EdTech platforms
+* Competitive programming tracking
+
+---
+
+## 👤 Author
+
+**Vikas Patel**
+Full Stack Developer | Educator | Mentor
+
+---
+
+⭐ If you find this project useful, consider giving it a star on GitHub!
