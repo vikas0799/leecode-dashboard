@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { LeetCodeStats } from '@/lib/leetcode';
+import * as XLSX from 'xlsx';
 
 const REFRESH_INTERVAL = 30;
 const STORAGE_KEY = 'leetcode_usernames';
@@ -228,6 +229,24 @@ export default function Dashboard() {
         return <span className="text-blue-500 ml-1 text-[10px] font-bold">{sortOrder === 'asc' ? '↑' : '↓'}</span>;
     };
 
+    const handleDownloadExcel = () => {
+        const dataToExport = filteredStudents.map((s, index) => ({
+            Rank: index + 1,
+            Student: s.username,
+            College: collegeByUsername[s.username.toLowerCase()] || '',
+            Easy: s.easySolved,
+            Medium: s.mediumSolved,
+            Hard: s.hardSolved,
+            Total: s.totalSolved,
+            LeetCode_Rank: s.ranking
+        }));
+
+        const worksheet = XLSX.utils.json_to_sheet(dataToExport);
+        const workbook = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(workbook, worksheet, "LeetCode Stats");
+        XLSX.writeFile(workbook, "leetcode_stats.xlsx");
+    };
+
     return (
         <div className="min-h-screen bg-slate-50">
             {/* Header */}
@@ -247,6 +266,16 @@ export default function Dashboard() {
                             <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
                         </span>
                         <span>Refreshing in {countdown}s</span>
+                        <button
+                            onClick={handleDownloadExcel}
+                            className="bg-white border border-slate-200 text-slate-600 hover:text-blue-500 hover:border-blue-500 p-2 rounded-lg transition-all ml-2"
+                            title="Download Excel"
+                        >
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
+                                <path d="M.5 9.9a.5.5 0 0 1 .5.5v2.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2.5a.5.5 0 0 1 1 0v2.5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-2.5a.5.5 0 0 1 .5-.5z" />
+                                <path d="M7.646 11.854a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0-.708-.708L8.5 10.293V1.5a.5.5 0 0 0-1 0v8.793L5.354 8.146a.5.5 0 0 1-.708.708l3 3z" />
+                            </svg>
+                        </button>
                     </div>
                 </div>
             </header>
